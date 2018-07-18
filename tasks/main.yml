@@ -4,6 +4,10 @@
   tags:
       - always
 
+- name: Calculate JVM Heap
+  include: calculate-jvm-heap.yml
+  when: not es_multi
+
 - name: set compatibility variables
   include: compatibility-variables.yml
   tags:

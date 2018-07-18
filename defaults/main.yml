@@ -1,5 +1,6 @@
 ---
 es_multi: false
+master_inventory: "{{ groups['master'] | map('extract', hostvars, ['ansible_host']) | join(',') }}"
 es_major_version: "6.x"
 es_version: "6.3.1"
 es_use_snapshot_release: false

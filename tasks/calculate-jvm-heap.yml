@@ -1,0 +1,4 @@
+---
+- name: Set Fact ES-HEAP
+  set_fact:
+   es_heap_size: "{{ 30000 if (ansible_memtotal_mb/2)|round|int|abs >= 30000 else (ansible_memtotal_mb/2)|round|int|abs }}m"
