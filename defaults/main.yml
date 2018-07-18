@@ -1,8 +1,9 @@
 ---
+es_multi: false
 es_major_version: "6.x"
 es_version: "6.3.1"
 es_use_snapshot_release: false
-es_enable_xpack: true
+es_enable_xpack: false
 es_package_name: "elasticsearch"
 es_version_lock: false
 es_use_repository: true
@@ -30,7 +31,7 @@ es_max_open_files: 65536
 es_max_threads: "{{ 2048 if ( es_version | version_compare('6.0.0', '<')) else 8192 }}"
 es_max_map_count: 262144
 es_allow_downgrades: false
-es_xpack_features: ["alerting","monitoring","graph","ml","security"]
+es_xpack_features: ["monitoring"]
 #These are used for internal operations performed by ansible.
 #They do not affect the current configuration
 es_api_host: "localhost"

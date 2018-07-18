@@ -66,17 +66,18 @@
 
 #Clean up un-wanted package scripts to avoid confusion
 
-- name: Delete Default Init
+- name: Delete Default Init MULTI_MOD
   become: yes
   file: dest=/etc/init.d/elasticsearch state=absent
+  when: es_multi 
 
-- name: Create empty default environment file
+- name: Create empty default environment file MULTI_MOD
   become: yes
   changed_when: False
   copy:
     dest: /etc/default/elasticsearch
     content: ''
-  when: ansible_os_family == 'Debian'
+  when: ansible_os_family == 'Debian' and es_multi
 
 - name: Create empty default environment file
   become: yes
@@ -86,8 +87,8 @@
     content: ''
   when: ansible_os_family == 'RedHat'
 
-- name: Symlink default systemd service to first instance of elasticsearch
-  when: use_system_d
+- name: Symlink default systemd service to first instance of elasticsearch MULTI_MOD
+  when: use_system_d and es_multi
   block:
   - name: Check if default systemd file exists
     stat:
@@ -112,18 +113,21 @@
     - reload systemd configuration
     - restart elasticsearch
 
-- name: Delete Default Configuration File
-  become: yes
-  file: dest=/etc/elasticsearch/elasticsearch.yml state=absent
+- name: MULTI_MOD elasticsearch-config.yml - do not remove files
+  when: es_multi
+  block:
+   - name: Delete Default Configuration File
+     become: yes
+     file: dest=/etc/elasticsearch/elasticsearch.yml state=absent
+  
+   - name: Delete Default Logging File
+     become: yes
+     file: dest=/etc/elasticsearch/logging.yml state=absent
 
-- name: Delete Default Logging File
-  become: yes
-  file: dest=/etc/elasticsearch/logging.yml state=absent
+   - name: Delete Default Logging File
+     become: yes
+     file: dest=/etc/elasticsearch/log4j2.properties state=absent
 
-- name: Delete Default Logging File
-  become: yes
-  file: dest=/etc/elasticsearch/log4j2.properties state=absent
-
-- name: Delete Default JVM Options File
-  become: yes
-  file: dest=/etc/elasticsearch/jvm.options state=absent
+   - name: Delete Default JVM Options File
+     become: yes
+     file: dest=/etc/elasticsearch/jvm.options state=absent

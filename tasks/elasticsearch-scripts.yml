@@ -1,7 +1,14 @@
 ---
 
-- name: set fact es_script_dir
+- name: set fact es_script_dir MULTI_MOD True
   set_fact: es_script_dir={{ es_conf_dir }}/{{es_instance_name}}
+  when: es_multi
+  tags:
+      - always
+
+- name: set fact es_script_dir MULTI_MOD False
+  set_fact: es_script_dir={{ es_conf_dir }}
+  when: not es_multi
   tags:
       - always
 

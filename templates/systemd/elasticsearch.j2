@@ -8,7 +8,13 @@ After=network-online.target
 Environment=ES_HOME={{es_home}}
 Environment=CONF_DIR={{conf_dir}}
 Environment=ES_PATH_CONF={{conf_dir}}
+# MULTI_MOD
+{% if es_multi == true %}
 Environment=DATA_DIR={{ data_dirs | array_to_str }}
+{% else %}
+Environment=DATA_DIR={{ data_dirs }}
+{% endif %}
+
 Environment=LOG_DIR={{log_dir}}
 Environment=PID_DIR={{pid_dir}}
 EnvironmentFile=-{{instance_default_file}}
