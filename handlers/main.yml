@@ -1,14 +1,95 @@
-
+---
 - name: reload systemd configuration
   become: yes
   command: systemctl daemon-reload
 
-# Restart service and ensure it is enabled
-
 - name: restart elasticsearch
-  become: yes
-  service: name={{instance_init_script | basename}} state=restarted enabled=yes
+  command: /bin/true
   when:
     - es_restart_on_change
     - es_start_service
   register: es_restarted
+  notify: stop es
+
+- name: enable elasticsearch
+  listen: stop es
+  service: name={{instance_init_script | basename}} enabled=yes
+
+- name: disable shard allocation
+  listen: stop es
+  uri:
+   url: http://{{ es_api_host }}:{{ es_api_port }}/_cluster/settings
+   method: PUT
+   body_format: json
+   body: "{\"persistent\":{\"cluster.routing.allocation.enable\":\"none\"}}"
+  register: result
+  until: result.json.acknowledged == true
+  retries: 5
+  delay: 3
+  changed_when: result.json.acknowledged == true
+  when: not es_first_install 
+
+- name: stop es service 
+  listen: stop es
+  service:
+   name: elasticsearch
+   state: stopped
+  
+- name: wait es stopped
+  listen: stop es
+  wait_for: host={{ es_api_host }} port={{ es_api_port }} delay=5 state=absent
+  changed_when: true
+  notify:
+   - start es
+
+- name: start es service 
+  listen: start es
+  service:
+   name: elasticsearch
+   state: started
+   enabled: yes
+  register: es_restarted
+
+- name: wait es started
+  listen: start es
+  wait_for: host={{ es_api_host }} port={{ es_api_port }} delay=5 state=present
+  changed_when: true
+  when: es_first_install
+ 
+- name: wait for cluster
+  listen: start es
+  uri:
+   url: http://{{ es_api_host }}:{{ es_api_port }}/_cat/nodes
+   method: GET
+   return_content: yes
+  register: get_result
+  until: get_result.content.find(es_api_host) != -1
+  retries: 30
+  delay: 3
+  when: not es_first_install
+ 
+- name: enable shard allocation
+  listen: start es
+  uri:
+   url: http://{{ es_api_host }}:{{ es_api_port }}/_cluster/settings
+   method: PUT
+   body_format: json
+   body: "{\"persistent\":{\"cluster.routing.allocation.enable\":null}}"
+  register: result
+  until: result.json.acknowledged == true
+  retries: 5
+  delay: 3
+  changed_when: result.json.acknowledged == true
+  when: not es_first_install
+
+- name: wait for cluster health
+  listen: start es
+  uri:
+   url: http://{{ es_api_host }}:{{ es_api_port }}/_cat/health
+   method: GET
+   return_content: yes
+  register: health_result
+  until: health_result.content.find("green") != -1
+  retries: 10000 
+  delay: 5
+  when: not es_first_install
